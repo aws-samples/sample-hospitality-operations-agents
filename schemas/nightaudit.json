@@ -1,0 +1,132 @@
+[
+  {
+    "name": "daily_report",
+    "description": "Operational summary for one property-day, computed live from the current tables. Returns occupancy (totalRooms, occupied, percent), revenue, roomsSold and adr. This is the live view; audit_report is the stored snapshot.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Daily report query.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property. Required: this agent is chain-level, so the property is never implied."
+        },
+        "date": {
+          "type": "string",
+          "description": "Operating date as YYYY-MM-DD. Omit for today."
+        }
+      },
+      "required": ["propertyId"]
+    }
+  },
+  {
+    "name": "audit_report",
+    "description": "The stored night-audit run for one property-day, under metrics.*. A 404 NOT_FOUND means the audit has not run for that date yet, which is the normal pre-audit state and a useful signal rather than an error.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Stored audit report query.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property."
+        },
+        "date": {
+          "type": "string",
+          "description": "Operating date as YYYY-MM-DD. Omit for today."
+        }
+      },
+      "required": ["propertyId"]
+    }
+  },
+  {
+    "name": "compare_metrics",
+    "description": "Read both the live daily report and the stored audit report for one property-day and diff the overlapping metrics. Prefer this over reading the two separately: the two endpoints report the same day under different field names, and both publish a field called 'adr' computed from different denominators (room revenue over rooms occupied versus room revenue over rooms sold). This tool returns both source values per metric plus an explicit discrepancies list, including the cause of an adr divergence. Report discrepancies as findings; never silently pick whichever number you saw first.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Metric reconciliation for one property-day.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property."
+        },
+        "date": {
+          "type": "string",
+          "description": "Operating date as YYYY-MM-DD. Omit for today."
+        }
+      },
+      "required": ["propertyId"]
+    }
+  },
+  {
+    "name": "list_stays",
+    "description": "List stays at one property. Use this to find exceptions the audit needs cleared first: a stay still CHECKED_IN whose checkOutDate is already in the past is the classic blocker. NO_SHOW is never set by this platform, so do not look for it or infer it.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Stay query for one property.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property."
+        },
+        "status": {
+          "type": "string",
+          "description": "Stay status filter. One of CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED."
+        },
+        "date": {
+          "type": "string",
+          "description": "Operating date as YYYY-MM-DD."
+        },
+        "page": {
+          "type": "integer",
+          "description": "1-based page number."
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Results per page. Defaults to 100."
+        }
+      },
+      "required": ["propertyId"]
+    }
+  },
+  {
+    "name": "list_folios",
+    "description": "List folios at one property. Use this to find unsettled balances that must be resolved before the audit runs.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Folio query for one property.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property."
+        },
+        "status": {
+          "type": "string",
+          "description": "Folio status filter. One of OPEN, CLOSED, VOIDED. Filter to OPEN to find unsettled balances."
+        },
+        "page": {
+          "type": "integer",
+          "description": "1-based page number."
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Results per page. Defaults to 100."
+        }
+      },
+      "required": ["propertyId"]
+    }
+  },
+  {
+    "name": "room_board",
+    "description": "Room status counts and per-room status for one property. Use this to find rooms stuck mid-state (CLEANING or INSPECTING) that will distort the audit's occupancy figures.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Room board for one property.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property."
+        }
+      },
+      "required": ["propertyId"]
+    }
+  }
+]

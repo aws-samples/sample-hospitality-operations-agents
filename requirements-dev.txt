@@ -1,0 +1,17 @@
+# Development and test dependencies.
+#
+# The unit suite under tests/unit is fully offline: boto3 clients and
+# urllib.request.urlopen are replaced with fakes, so no AWS credentials are
+# needed and no request can reach the live foundation.
+#
+# tests/integration/verify_tools.py is a script rather than a pytest suite --
+# deliberately, so a bare `pytest` run can never invoke the deployed Lambdas.
+# It needs boto3 and real credentials; run it explicitly.
+#
+#   pytest tests/unit -q
+#   AWS_PROFILE=... AWS_REGION=us-east-1 python3 tests/integration/verify_tools.py
+#
+# Install with:
+#   uv pip install --python infra/.venv/bin/python3 -r requirements-dev.txt
+pytest>=8.0.0
+boto3>=1.40.0

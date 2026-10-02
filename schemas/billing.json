@@ -1,0 +1,223 @@
+[
+  {
+    "name": "list_folios",
+    "description": "List folios at one property, optionally filtered by status. Use this to find unsettled or stalled balances worth investigating.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Folio query for one property.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property. Required: this agent is chain-level, so the property is never implied."
+        },
+        "status": {
+          "type": "string",
+          "description": "Folio status filter. One of OPEN, CLOSED, VOIDED."
+        },
+        "page": {
+          "type": "integer",
+          "description": "1-based page number."
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Results per page. Defaults to 50."
+        }
+      },
+      "required": [
+        "propertyId"
+      ]
+    }
+  },
+  {
+    "name": "get_folio",
+    "description": "Fetch one folio in full, with every charge and payment line. Duplicate, missing, and mis-posted charges are only visible at line level, so this read must happen before you propose any write.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Single folio lookup.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property this run is about. Required, and checked: a record at any other property is refused, not returned."
+        },
+        "folioId": {
+          "type": "string",
+          "description": "UUID of the folio."
+        }
+      },
+      "required": [
+        "propertyId",
+        "folioId"
+      ]
+    }
+  },
+  {
+    "name": "find_folio_by_reservation",
+    "description": "Find the folio belonging to one reservation, and return it in full with its charge and payment lines. Use this whenever you have a reservationId and need the folio -- which is the normal case when a checkout wakes you. The foundation has no folio-by-reservation lookup, so this scans the property's folios for you inside one call rather than making you page through list_folios yourself. Returns folio=null with a note when the reservation has no folio at this property, and SCAN_INCOMPLETE when there were more folios than it could check -- which is NOT the same as 'no folio exists' and must not be reported as one.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Folio lookup by reservation.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property the reservation belongs to. Required: the scan is per property, and a chain-wide scan would read every folio in the company."
+        },
+        "reservationId": {
+          "type": "string",
+          "description": "UUID of the reservation whose folio you want."
+        }
+      },
+      "required": [
+        "propertyId",
+        "reservationId"
+      ]
+    }
+  },
+  {
+    "name": "get_loyalty_profile",
+    "description": "Loyalty standing for one guest: tier, points balance, lifetime stays. Use this to size a goodwill adjustment proportionately instead of guessing.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Loyalty lookup by guest.",
+      "properties": {
+        "guestId": {
+          "type": "string",
+          "description": "UUID of the guest."
+        }
+      },
+      "required": [
+        "guestId"
+      ]
+    }
+  },
+  {
+    "name": "get_loyalty_transactions",
+    "description": "Loyalty points ledger for one guest. Check this before proposing an adjustment: it shows whether a compensating adjustment already landed, which is the most common way a goodwill gesture gets double-paid.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Loyalty ledger query.",
+      "properties": {
+        "guestId": {
+          "type": "string",
+          "description": "UUID of the guest."
+        },
+        "page": {
+          "type": "integer",
+          "description": "1-based page number."
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Results per page. Defaults to 50."
+        }
+      },
+      "required": [
+        "guestId"
+      ]
+    }
+  },
+  {
+    "name": "post_charge",
+    "description": "Post a charge or a corrective adjustment to a folio. THIS MOVES MONEY AND REQUIRES HUMAN APPROVAL. Without a valid approval_token the call is rejected. The correct sequence is: read the folio, state the problem and the proposed amount to the human, wait for them to approve it in the ops console. Their release starts a new run that makes this one call; the approval is attached by the system, never by you. Never attempt to work around the approval gate.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Charge or adjustment to post.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property this run is about. Required, and checked: a record at any other property is refused, not returned."
+        },
+        "folioId": {
+          "type": "string",
+          "description": "UUID of the folio to post to."
+        },
+        "description": {
+          "type": "string",
+          "description": "What this line is for, as it will appear on the guest's folio."
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount in the property's currency. Must be non-zero. Negative to remove money, which requires chargeType=ADJUSTMENT."
+        },
+        "chargeType": {
+          "type": "string",
+          "description": "SERVICE for a genuine new charge, ADJUSTMENT for a correction to an existing one. Defaults to SERVICE."
+        },
+        "chargeDate": {
+          "type": "string",
+          "description": "Optional posting date as YYYY-MM-DD. Omit for today."
+        },
+        "approval_token": {
+          "type": "string",
+          "description": "Do not supply this. For an execution run a human released in the ops console, the system attaches the approval itself, outside this conversation; any value written here is ignored. Without a released approval the write is refused."
+        }
+      },
+      "required": [
+        "propertyId",
+        "folioId",
+        "description",
+        "amount"
+      ]
+    }
+  },
+  {
+    "name": "void_folio",
+    "description": "Void an entire folio. THIS MOVES MONEY AND REQUIRES HUMAN APPROVAL. Note the scope carefully: this voids the WHOLE folio, not one line. There is no endpoint to void a single charge. To reverse one line, post a negative ADJUSTMENT with post_charge instead, which is almost always what is actually wanted.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Folio void.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property this run is about. Required, and checked: a record at any other property is refused, not returned."
+        },
+        "folioId": {
+          "type": "string",
+          "description": "UUID of the folio to void in its entirety."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why the whole folio is being voided. Recorded permanently."
+        },
+        "approval_token": {
+          "type": "string",
+          "description": "Do not supply this. For an execution run a human released in the ops console, the system attaches the approval itself, outside this conversation; any value written here is ignored. Without a released approval the write is refused."
+        }
+      },
+      "required": [
+        "propertyId",
+        "folioId",
+        "reason"
+      ]
+    }
+  },
+  {
+    "name": "adjust_loyalty",
+    "description": "Adjust a guest's loyalty points balance. THIS MOVES VALUE AND REQUIRES HUMAN APPROVAL. Check get_loyalty_transactions first so you do not compensate the same incident twice.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Loyalty points adjustment.",
+      "properties": {
+        "guestId": {
+          "type": "string",
+          "description": "UUID of the guest."
+        },
+        "points": {
+          "type": "integer",
+          "description": "Points to add, or negative to deduct. Must be non-zero."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why, max 500 characters. This lands in the guest's loyalty ledger and is guest-visible in effect, so write it as something a guest could read."
+        },
+        "approval_token": {
+          "type": "string",
+          "description": "Do not supply this. For an execution run a human released in the ops console, the system attaches the approval itself, outside this conversation; any value written here is ignored. Without a released approval the write is refused."
+        }
+      },
+      "required": [
+        "guestId",
+        "points",
+        "reason"
+      ]
+    }
+  }
+]

@@ -1,0 +1,306 @@
+/* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: MIT-0 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * The two lighting conditions.
+ *
+ * `:root` carries night. `[data-theme='light']` overrides it with day. Nothing else in
+ * the codebase mentions a theme — every component uses semantic class names and gets
+ * the right hex for whichever is active. The attribute is set on <html> by an inline
+ * script in index.html before first paint, so switching themes never flashes.
+ *
+ * Values are space-separated RGB triplets because Tailwind composes them with
+ * `<alpha-value>`; writing them as hex here would break every `/70` in the app.
+ *
+ * Contrast for every pair in both themes clears WCAG AA for normal text. That is a
+ * measured claim, not an aspiration: the tightest ratio is 5.30:1 (light `text-faint`),
+ * and the palette this replaced had a 3.23:1 value doing the most-used job in the UI.
+ */
+
+@layer base {
+  :root {
+    /* ── night ─────────────────────────────────────────────────────────── */
+    --bg: 15 13 11; /* #0F0D0B — ink with brown in it, not blue */
+    --surface: 23 19 15;
+    --surface-2: 30 25 21;
+    --surface-3: 38 32 25;
+    --border: 50 42 35;
+    --border-strong: 69 58 48;
+
+    --text: 244 238 230; /* 16.8:1 */
+    --text-dim: 183 171 156; /*  8.6:1 */
+    --text-faint: 148 136 120; /*  5.6:1 — was 3.2:1 */
+
+    --ember: 233 169 79; /* 9.5:1 */
+    --ember-line: 138 90 28;
+    --ember-wash: 42 31 17;
+
+    --sage: 134 191 156; /* 9.2:1 */
+    --sage-line: 62 102 80;
+    --sage-wash: 22 33 27;
+
+    --clay: 222 136 116; /* 7.3:1 */
+    --clay-line: 122 58 44;
+    --clay-wash: 37 22 17;
+
+    --dusk: 154 175 210; /* 8.7:1 */
+    --dusk-line: 63 78 104;
+    --dusk-wash: 21 26 34;
+
+    /* Atmosphere. A single warm source, off-centre — a centred vignette reads as a
+       stock template. */
+    --lamp: radial-gradient(900px 600px at 12% -8%, rgba(233, 169, 79, 0.08), transparent 70%),
+      radial-gradient(700px 500px at 92% 108%, rgba(154, 175, 210, 0.05), transparent 70%);
+    --lamp-shadow: 0 -1px 0 rgba(244, 238, 230, 0.05) inset,
+      0 24px 48px -24px rgba(0, 0, 0, 0.9);
+    --grain-opacity: 0.5;
+    --grid-line: rgba(244, 238, 230, 0.028);
+
+    color-scheme: dark;
+    /* Tabular numerals everywhere. A column of figures that jitters as it updates is a
+       column nobody can read at a glance. */
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  [data-theme='light'] {
+    /* ── day ───────────────────────────────────────────────────────────── */
+    /* Warm paper rather than white. The same room, lit differently — a cold #FFF would
+       make the serif wordmark and the warm accents look like they were borrowed. */
+    --bg: 247 243 236; /* #F7F3EC */
+    --surface: 255 253 249;
+    --surface-2: 242 237 228;
+    --surface-3: 234 227 216;
+    --border: 221 212 198;
+    --border-strong: 196 184 166;
+
+    --text: 31 26 21; /* 15.6:1 */
+    --text-dim: 87 78 68; /*  7.4:1 */
+    --text-faint: 110 99 87; /*  5.3:1 */
+
+    /* Accents darken substantially. #E9A94F is 9.5:1 on ink and 1.9:1 on paper, so a
+       theme that only swapped the background would make every label unreadable —
+       which is the failure mode this whole file exists to avoid. */
+    --ember: 138 83 7; /* 5.7:1 */
+    --ember-line: 217 160 90;
+    --ember-wash: 251 240 222;
+
+    --sage: 47 107 76; /* 5.7:1 */
+    --sage-line: 143 187 161;
+    --sage-wash: 233 242 236;
+
+    --clay: 158 58 37; /* 6.2:1 */
+    --clay-line: 215 156 140;
+    --clay-wash: 251 234 229;
+
+    --dusk: 53 80 124; /* 7.3:1 */
+    --dusk-line: 159 178 212;
+    --dusk-wash: 233 238 247;
+
+    /* Daylight from the same direction, and much weaker: on paper an atmospheric
+       gradient reads as a smudge long before it reads as depth. */
+    --lamp: radial-gradient(1000px 700px at 12% -10%, rgba(138, 83, 7, 0.05), transparent 70%),
+      radial-gradient(800px 600px at 92% 108%, rgba(53, 80, 124, 0.035), transparent 70%);
+    --lamp-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset,
+      0 16px 32px -20px rgba(31, 26, 21, 0.22);
+    --grain-opacity: 0.28;
+    --grid-line: rgba(31, 26, 21, 0.035);
+
+    color-scheme: light;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-ink text-bone font-sans antialiased;
+    background-image: var(--lamp);
+    background-attachment: fixed;
+    /* Themes swap instantly on the tokens but the large fills read better eased. */
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  /* Grain: a data-URI SVG turbulence, so it costs no request and scales with the
+     viewport. Fixed, so it does not swim when a pane scrolls. Lighter on paper. */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+
+  ::selection {
+    @apply bg-ember/25 text-bone;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--border-strong)) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full border-[3px] border-solid border-transparent bg-line-bright bg-clip-content;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-bone-faint;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-1 ring-ember ring-offset-2 ring-offset-ink;
+  }
+
+  /* Placeholders inherit the theme's faint token rather than a browser default, which
+     in light mode is a pale grey that fails contrast outright. */
+  ::placeholder {
+    @apply text-bone-faint;
+    opacity: 1;
+  }
+}
+
+@layer components {
+  .grid-field {
+    background-image: linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* A section label: small, spaced, uppercase mono. An instrument panel labels its
+     dials rather than shouting at you.
+     `bone-dim`, not `bone-faint`: this is the most-read text in the app and it earns
+     the extra contrast. `faint` is for the things beside it. */
+  .dial-label {
+    @apply font-mono text-2xs uppercase tracking-[0.12em] text-bone-dim;
+  }
+
+  .panel {
+    @apply border border-line bg-ink-2;
+  }
+
+  /* An indeterminate progress hairline sweeping the top edge of a working run.
+     Communicates "in flight" without a spinner. */
+  .sweeping {
+    @apply relative overflow-hidden;
+  }
+  .sweeping::before {
+    content: '';
+    @apply absolute inset-x-0 top-0 h-px w-1/4 animate-sweep bg-gradient-to-r from-transparent via-ember to-transparent;
+  }
+}
+
+/*
+ * Agent output is markdown — headings, tables, bold, lists — and the first version of
+ * this console rendered it as pre-wrapped plain text, so a comparison table arrived as a
+ * wall of pipe characters. These styles are the other half of that fix: react-markdown
+ * produces the elements, and this makes them look like they belong in an operations
+ * panel rather than in a blog post.
+ *
+ * Body copy is full-strength `text-bone`, not `bone/90`. Stacking opacity on top of a
+ * theme token was part of what made the old dark mode hard to read: two independent
+ * dimmings compound, and neither one is visible in the class name.
+ */
+@layer components {
+  .prose-desk {
+    @apply text-[13.5px] leading-relaxed text-bone;
+  }
+  .prose-desk > * + * {
+    @apply mt-3;
+  }
+
+  .prose-desk h1,
+  .prose-desk h2,
+  .prose-desk h3,
+  .prose-desk h4 {
+    @apply mt-5 font-display text-[15px] font-semibold tracking-tight text-bone;
+  }
+  .prose-desk h1 {
+    @apply text-[17px];
+  }
+  /* Agents open with "## Heading" constantly; a top margin on the first one would leave
+     a gap above every answer. */
+  .prose-desk > :first-child {
+    @apply mt-0;
+  }
+
+  .prose-desk strong {
+    @apply font-semibold text-bone;
+  }
+  .prose-desk em {
+    @apply italic text-bone-dim;
+  }
+  .prose-desk a {
+    @apply text-ember underline decoration-ember/40 underline-offset-2 hover:decoration-ember;
+  }
+
+  .prose-desk ul,
+  .prose-desk ol {
+    @apply space-y-1.5 pl-5;
+  }
+  .prose-desk ul {
+    @apply list-none;
+  }
+  /* An em-dash marker instead of a bullet: quieter, and it matches the mono voice. */
+  .prose-desk ul > li {
+    @apply relative;
+  }
+  .prose-desk ul > li::before {
+    content: '—';
+    @apply absolute -left-5 font-mono text-bone-faint;
+  }
+  .prose-desk ol {
+    @apply list-decimal marker:font-mono marker:text-bone-faint;
+  }
+  .prose-desk li > ul,
+  .prose-desk li > ol {
+    @apply mt-1.5;
+  }
+
+  /* Tables are the reason GFM is enabled. A1 reports assignments as one, A5 reports
+     rankings as one, and they are the densest thing on screen. */
+  .prose-desk table {
+    @apply my-4 w-full border-collapse overflow-hidden border border-line text-left font-mono text-xs;
+  }
+  .prose-desk thead {
+    @apply bg-ink-3;
+  }
+  .prose-desk th {
+    @apply border-b border-line px-2.5 py-1.5 text-2xs font-medium uppercase tracking-[0.08em] text-bone-dim;
+  }
+  .prose-desk td {
+    @apply border-b border-line px-2.5 py-1.5 align-top text-bone;
+  }
+  .prose-desk tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .prose-desk tbody tr:hover {
+    @apply bg-ember/[0.06];
+  }
+
+  .prose-desk code {
+    @apply rounded border border-line bg-ink-3 px-1 py-0.5 font-mono text-[11.5px] text-ember;
+  }
+  .prose-desk pre {
+    @apply overflow-x-auto rounded border border-line bg-ink-3 p-3;
+  }
+  .prose-desk pre code {
+    @apply border-0 bg-transparent p-0 text-[11.5px] text-bone;
+  }
+
+  .prose-desk blockquote {
+    @apply border-l-2 border-ember-deep pl-3 text-bone-dim;
+  }
+  .prose-desk hr {
+    @apply border-line;
+  }
+}

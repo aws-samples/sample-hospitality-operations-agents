@@ -1,0 +1,3 @@
+# git-secrets allowlist. Only documentation placeholders belong here, never a real value.
+# 111122223333 is the AWS documentation example account id, used in a test event envelope.
+111122223333

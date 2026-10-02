@@ -1,0 +1,135 @@
+[
+  {
+    "name": "list_arrivals",
+    "description": "List reservations whose CHECK-IN DATE falls inside a date window at one property, earliest first. A CONFIRMED stay is booked but not yet checked in, i.e. an arrival. The window defaults to today and tomorrow, because pre-assignment is worth doing before the guest arrives and today's arrivals are often already checked in. Returns a 'window' block stating the exact dates covered, counts.arriving, counts.unassigned (arrivals with no roomId yet -- these are your work), and loyaltyTier per arrival, which is the only guest-preference signal the platform exposes. If counts.arriving is 0 read the 'note' field before concluding anything: no arrivals in this window does not mean no reservations at this property.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Arrival-window query for one property.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property. Required: this agent is chain-level, so the property is never implied."
+        },
+        "status": {
+          "type": "string",
+          "description": "Stay status filter. One of CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED. Defaults to CONFIRMED, which is what an arrival is. NO_SHOW is never set by this platform and must not be requested."
+        },
+        "date": {
+          "type": "string",
+          "description": "First day of the window, as YYYY-MM-DD. Omit for today. This filters on the reservation's check-in date, so it means 'arriving on or after this date', not 'in house on this date'."
+        },
+        "daysAhead": {
+          "type": "integer",
+          "description": "How many days past 'date' to include, 0-14. Defaults to 1, i.e. today and tomorrow. Use 0 for a single day. Widen only when you have a reason: a larger window is more reservations to reason about, not a better decision."
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Reservations fetched per underlying page while filling the window. Defaults to 50. Raise it if the reply says the window was not fully covered."
+        }
+      },
+      "required": [
+        "propertyId"
+      ]
+    }
+  },
+  {
+    "name": "get_loyalty_profile",
+    "description": "Loyalty standing for one guest: tier, points balance, lifetime stays, and stays remaining to the next tier. Use this to justify an upgrade or a better floor for a high-tier guest.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Loyalty lookup by guest.",
+      "properties": {
+        "guestId": {
+          "type": "string",
+          "description": "UUID of the guest, as returned in a stay record."
+        }
+      },
+      "required": [
+        "guestId"
+      ]
+    }
+  },
+  {
+    "name": "list_rooms",
+    "description": "List every room at one property, each enriched with its room type's attributes. Returns roomId, roomNumber, floor, status, roomType, plus accessibilityType, smokingAllowed, bedConfiguration, maxOccupancy, amenities and squareFeet from the room-type catalogue, and an 'assignable' boolean. A room whose type name could not be matched carries roomTypeUnresolved=true rather than being dropped. There is no wing, features, or connecting-room data on the wire.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Room inventory query for one property.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property."
+        },
+        "onlyAssignable": {
+          "type": "boolean",
+          "description": "When true, drop rooms that are OCCUPIED, OUT_OF_ORDER, or OUT_OF_INVENTORY. Default false, so you see every room with its status attached."
+        }
+      },
+      "required": [
+        "propertyId"
+      ]
+    }
+  },
+  {
+    "name": "assign_room",
+    "description": "Pre-assign a specific room to a CONFIRMED reservation. Auto-executes without human approval. Always call list_rooms first and verify the room is assignable. If the reservation already has a room, this returns outcome=ALREADY_ASSIGNED_BY_SOMEONE_ELSE as a success: a front-desk human got there first, nothing was changed, and you must not retry.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Room pre-assignment.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property this run is about. Required, and checked: a record at any other property is refused, not returned."
+        },
+        "reservationId": {
+          "type": "string",
+          "description": "UUID of the reservation to assign a room to."
+        },
+        "roomId": {
+          "type": "string",
+          "description": "UUID of the room to assign, from list_rooms."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why this room for this guest, in one or two sentences citing the signals you used (loyalty tier, accessibility need, bed configuration, occupancy fit, floor). Written to the decision log for human audit, so it must be truthful. Do not claim to have matched stated guest preferences: no preference data is exposed by this platform."
+        }
+      },
+      "required": [
+        "propertyId",
+        "reservationId",
+        "roomId",
+        "reason"
+      ]
+    }
+  },
+  {
+    "name": "check_in",
+    "description": "Check a guest in, optionally into a specific room. Same-day and effectively irreversible, unlike pre-assignment. Only use this when explicitly asked to check someone in; routine work is assign_room.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Check-in for one reservation.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property this run is about. Required, and checked: a record at any other property is refused, not returned."
+        },
+        "reservationId": {
+          "type": "string",
+          "description": "UUID of the reservation."
+        },
+        "roomId": {
+          "type": "string",
+          "description": "Optional UUID of the room to check into. Omit to use the already pre-assigned room."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional free-text note recorded on the stay."
+        }
+      },
+      "required": [
+        "propertyId",
+        "reservationId"
+      ]
+    }
+  }
+]

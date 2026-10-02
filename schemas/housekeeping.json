@@ -1,0 +1,144 @@
+[
+  {
+    "name": "list_tasks",
+    "description": "List housekeeping tasks at one property. The platform returns them HIGH priority first then oldest; your job is to re-sequence that into an efficient route, not to re-sort by priority again. Task records carry roomNumber, priority, taskType, status, and assignedTo.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Task query for one property.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property. This selects which housekeeping identity the call signs in as, so it is required on every tool and is not merely a filter."
+        },
+        "status": {
+          "type": "string",
+          "description": "Task status filter. One of PENDING, ASSIGNED, CLEANING, COMPLETED, INSPECTING, INSPECTED, DIRTY."
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority filter. One of HIGH, NORMAL, LOW."
+        },
+        "assignedTo": {
+          "type": "string",
+          "description": "Filter to one housekeeper by name. Free text; only use names already seen in task output."
+        },
+        "page": {
+          "type": "integer",
+          "description": "1-based page number."
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Results per page. Defaults to 100."
+        }
+      },
+      "required": ["propertyId"]
+    }
+  },
+  {
+    "name": "get_task",
+    "description": "Fetch one housekeeping task in full, including its room number and current status. Use this to confirm state before assigning, completing, or inspecting.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Single task lookup.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property the task belongs to."
+        },
+        "taskId": {
+          "type": "string",
+          "description": "UUID of the task."
+        }
+      },
+      "required": ["propertyId", "taskId"]
+    }
+  },
+  {
+    "name": "room_board",
+    "description": "Room status board for one property: total rooms, occupancy percent, per-status counts, and every room's number, floor, type and status. The floor field is what makes same-floor batching possible and is the only room attribute beyond number, type and status that any endpoint exposes.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Room board for one property.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property."
+        }
+      },
+      "required": ["propertyId"]
+    }
+  },
+  {
+    "name": "assign_task",
+    "description": "Assign a PENDING or ASSIGNED task to a named housekeeper. Auto-executes without human approval. Any other current status returns 409 INVALID_STATE, which is information for you, not an error to retry. The platform has no staff roster, skills data, or shift data, so you may only use housekeeper names you have already seen in task output. Never invent a name.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Task assignment.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property the task belongs to."
+        },
+        "taskId": {
+          "type": "string",
+          "description": "UUID of the task to assign."
+        },
+        "assignedTo": {
+          "type": "string",
+          "description": "Housekeeper name, max 100 characters. Must be a name already present in this property's task data."
+        }
+      },
+      "required": ["propertyId", "taskId", "assignedTo"]
+    }
+  },
+  {
+    "name": "complete_task",
+    "description": "Mark cleaning complete on a task in ASSIGNED or CLEANING. Advances the room through the platform's workflow to INSPECTING. Any other current status returns 409 INVALID_STATE.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Task completion.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property the task belongs to."
+        },
+        "taskId": {
+          "type": "string",
+          "description": "UUID of the task."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional free-text note about the clean."
+        }
+      },
+      "required": ["propertyId", "taskId"]
+    }
+  },
+  {
+    "name": "inspect_task",
+    "description": "Pass or fail inspection on a task in INSPECTING. Passing marks the room INSPECTED and available; failing sends it back to DIRTY and re-opens cleaning, so a fail is a real operational decision that costs a turn. Any other current status returns 409 INVALID_STATE.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Task inspection result.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property the task belongs to."
+        },
+        "taskId": {
+          "type": "string",
+          "description": "UUID of the task."
+        },
+        "passed": {
+          "type": "boolean",
+          "description": "True to pass inspection, false to fail it and send the room back to DIRTY."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional free-text note. Supply one whenever passed is false, so a human can see why."
+        }
+      },
+      "required": ["propertyId", "taskId", "passed"]
+    }
+  }
+]

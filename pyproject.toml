@@ -1,0 +1,21 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+
+# Project metadata and test configuration only. This is sample code, not a package:
+# it is deployed with CDK, never installed, and never published to PyPI. Runtime
+# dependencies stay in the requirements files the build scripts vendor from --
+# agents/requirements.txt (the Runtime bundle), infra/requirements.txt (CDK), and
+# requirements-dev.txt (the offline test suite).
+
+[project]
+name = "sample-hotel-operations-agents"
+version = "1.0.0"
+description = "Multi-agent hotel operations on Amazon Bedrock AgentCore, extending sample-hospitality-systems"
+requires-python = ">=3.12"
+license = "MIT-0"
+
+[tool.pytest.ini_options]
+# The unit suite only. tests/integration holds scripts that invoke deployed
+# resources and spend model tokens; they are run explicitly, never collected.
+testpaths = ["tests/unit"]
+addopts = "-q"

@@ -1,0 +1,8 @@
+# AgentCore L2 constructs (Runtime, Gateway, Memory, Interceptors, Evaluation)
+# live in the STABLE aws_cdk.aws_bedrockagentcore module. Do not use the
+# deprecated aws_cdk.aws_bedrock_agentcore_alpha module.
+aws-cdk-lib>=2.226.0,<3.0.0
+constructs>=10.0.0,<11.0.0
+
+# Synth-time resolution of the foundation stack's outputs (read-only).
+boto3>=1.40.0

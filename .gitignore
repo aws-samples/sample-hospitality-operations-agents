@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# CDK
+infra/cdk.out/
+cdk.out/
+*.js
+!frontend/**/*.js
+*.d.ts
+.cdk.staging/
+
+# Build artifacts (arm64 dependency bundles)
+agents/package/
+tools/**/package/
+build/
+dist/
+
+# Node
+node_modules/
+
+# Frontend
+frontend/dist/
+frontend/.vite/
+
+# Non-interference baselines: transient before/after snapshots of the
+# foundation, captured per deploy by the Layer 6 check. Meaningful only within
+# the run that produced them.
+.verify/
+
+# Local config / secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+foundation.local.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Frontend build config, written by scripts/build_frontend.sh from the deployed
+# api stack's outputs. Not secret -- a pool id and a public SPA client id -- but
+# environment-specific, and a committed copy is a copy that goes stale.
+frontend/.env.production.local
+
+# Browser-automation scratch: snapshots and screenshots from playwright-cli runs
+.playwright-cli/
+.shots/
+
+# Claude Code working notes are kept out of the public repository.
+CLAUDE.md

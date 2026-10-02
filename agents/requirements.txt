@@ -1,0 +1,40 @@
+# Runtime dependencies for the hotel-operations agent graph.
+#
+# These are vendored FLAT into the deployment package by scripts/build_agents.sh
+# using Linux arm64 wheels -- AgentCore Runtime direct code deploy unzips the
+# archive to /var/task and puts that directory first on sys.path, so a
+# dependency in a subdirectory would only be importable as `from subdir import x`
+# and third-party packages would not resolve.
+#
+# Versions are pinned exactly. An agent graph whose behaviour shifts because a
+# transitive SDK release changed tool-calling semantics is not debuggable after
+# the fact.
+
+# The orchestrator and all five sub-agents, plus the MCP client that speaks to
+# the Gateway and the agents-as-tools primitive.
+strands-agents==1.55.0
+
+# BedrockAgentCoreApp (the mandatory POST /invocations + GET /ping contract),
+# AgentCoreMemorySessionManager, and the Code Interpreter data-plane client.
+#
+# Deliberately NOT strands-agents-tools, which also ships a code-interpreter
+# tool: its base install adds aiohttp, pillow, slack-bolt, sympy and dill --
+# roughly a hundred megabytes of arm64 wheels for one tool that A5 alone uses.
+# agents/code_execution.py writes that tool against this package instead.
+bedrock-agentcore==1.22.0
+
+# Imported directly: sigv4.py signs the Gateway's MCP requests with botocore's
+# SigV4Auth and hands the result to httpx as an auth flow. Both arrive
+# transitively as well, and are pinned here because this code names them.
+boto3==1.43.89
+httpx==0.28.1
+
+# Provides the `opentelemetry-instrument` entrypoint wrapper that emits the
+# spans AgentCore Observability reads. Without it the runtime still serves
+# traffic, but the orchestrator -> sub-agent -> Gateway -> Lambda trace is never
+# emitted at all, so there is nothing for X-Ray to show. The runtime execution
+# role carries xray:PutTraceSegments unconditionally, so this is the only thing
+# tracing depends on -- see agentcore_stack.py on why `tracing_enabled` is unset.
+# Pinned like everything else here. It was a range once; this is the version in
+# the bundle the integration checks last passed against.
+aws-opentelemetry-distro==0.19.0

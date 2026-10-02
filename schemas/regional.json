@@ -1,0 +1,75 @@
+[
+  {
+    "name": "list_properties",
+    "description": "Every active property with its name, city, state and region. Unpaginated, and a chain-level caller receives all of them. This is the map you work from: the region field is what groups properties for like-for-like comparison. Call this first so you use real property IDs rather than guessing.",
+    "inputSchema": {
+      "type": "object",
+      "description": "No arguments."
+    }
+  },
+  {
+    "name": "occupancy",
+    "description": "Every active property's CURRENT occupancy, plus one day's revenue and check-in/check-out counts. Returns one row per property (propertyId, name, city, region, totalRooms, occupiedRooms, occupancyPercent, revenueToday, checkInsToday, checkOutsToday) and a chain summary -- it is the only tool that gives you a per-property view of the whole chain in one call. Despite the name and the two date parameters this is NOT a range report: occupancy reflects live room status and ignores both dates, revenueToday and the movement counts cover endDate alone, and startDate is ignored entirely by the foundation. Three different historical windows return identical numbers. Read the 'meaning' block in the reply and never describe this output as a trend or a period total. There is no propertyId filter; for one property over time use range_metrics.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Cross-property occupancy query.",
+      "properties": {
+        "startDate": {
+          "type": "string",
+          "description": "Range start as YYYY-MM-DD. Accepted for compatibility and then ignored by the foundation -- it changes nothing in the response. Do not rely on it."
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The single day that revenueToday, checkInsToday and checkOutsToday are measured on, as YYYY-MM-DD. Defaults to today. Does not affect occupancyPercent, which is always live."
+        },
+        "region": {
+          "type": "string",
+          "description": "Optional region name, exactly as returned by list_properties. Omit for every region."
+        }
+      }
+    }
+  },
+  {
+    "name": "range_metrics",
+    "description": "Per-day metrics over a date range, for ONE property by propertyId or for the whole chain by passing _all. Note what _all does: it returns the chain AGGREGATED into a single series (totals plus one dailyBreakdown for all 50 properties combined) -- it does NOT return a row per property. So a per-property comparison over time requires one call per property; there is no bulk alternative. Defaults to _all over the trailing 30 days. The range is capped at 92 days; a wider request is rejected with a message telling you to split it. Hand this output to code execution for variance, trend and RevPAR arithmetic rather than computing it in your head.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Per-day metric range query.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of one property, or the literal string _all for the chain aggregated into one series. Defaults to _all. _all gives you chain totals, not per-property rows."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Range start as YYYY-MM-DD, inclusive. Defaults to 29 days before endDate."
+        },
+        "endDate": {
+          "type": "string",
+          "description": "Range end as YYYY-MM-DD, inclusive. Defaults to today."
+        }
+      }
+    }
+  },
+  {
+    "name": "daily_report",
+    "description": "One property-day in detail. Use this to explain an outlier that the range view surfaced, rather than speculating about its cause.",
+    "inputSchema": {
+      "type": "object",
+      "description": "Daily report query.",
+      "properties": {
+        "propertyId": {
+          "type": "string",
+          "description": "UUID of the property."
+        },
+        "date": {
+          "type": "string",
+          "description": "Operating date as YYYY-MM-DD. Omit for today."
+        }
+      },
+      "required": [
+        "propertyId"
+      ]
+    }
+  }
+]

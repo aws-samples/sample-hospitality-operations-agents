@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0F0D0B" />
+
+    <!--
+      Applied before first paint, deliberately inline. React mounts after the browser
+      has already painted once, so deciding the theme in an effect shows the wrong one
+      for a frame -- a white flash on a console someone is using in a dark room.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('night-desk-theme');
+          var light =
+            stored === 'light' ||
+            (!stored && window.matchMedia('(prefers-color-scheme: light)').matches);
+          if (light) {
+            document.documentElement.dataset.theme = 'light';
+            document.querySelector('meta[name="theme-color"]').content = '#F7F3EC';
+          }
+        } catch (e) {
+          /* default to night */
+        }
+      })();
+    </script>
+    <title>Night Desk — AnyCompany Hotel Operations</title>
+
+    <!--
+      Three faces, each with a job.
+
+      Fraunces is a variable serif with an optical axis: used only for the wordmark
+      and pane titles, it puts a little hospitality warmth against an otherwise
+      industrial panel. Instrument Sans carries the interface. JetBrains Mono carries
+      every identifier, tool name, timestamp and figure -- an operations console is
+      read in columns, and tabular numerals are not decoration.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Instrument+Sans:ital,wght@0,400..700;1,400..600&family=JetBrains+Mono:ital,wght@0,300..700;1,300..600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

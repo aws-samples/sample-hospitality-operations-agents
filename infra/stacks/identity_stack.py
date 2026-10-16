@@ -77,7 +77,15 @@ CHAIN_AGENTS: tuple[tuple[str, str], ...] = (
     ("arrivals", "Manager"),
     ("billing", "Manager"),
     ("nightaudit", "Manager"),
-    ("regional", "RegionalManager"),
+    # RevenueManager, not RegionalManager. This was RegionalManager with
+    # custom:region unset, which the platform used to read as "every region". Its
+    # 2026-10 tenant-isolation fix made that fail closed -- a RegionalManager with no
+    # region is now refused with "no region assigned" -- and every A5 call broke.
+    # Setting a region would not help: properties.region is NULL throughout the
+    # platform's data, so a region filter matches nothing. RevenueManager is
+    # chain-level, is allowed on every reporting endpoint A5 calls, and reaches no
+    # write endpoint at all, so it is also the least-privileged identity that works.
+    ("regional", "RevenueManager"),
 )
 
 #: The agent whose group is neither chain-level nor regional, and which therefore

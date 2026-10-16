@@ -258,7 +258,7 @@ Each sub-agent gets a dedicated Cognito service user. The platform's existing `a
 | A1 Housekeeping Dispatch | `Housekeeping` | `custom:property_id` | Can read the room summary and task queue and assign tasks — and structurally cannot touch billing, loyalty, or reservations |
 | A2 Night Audit Exception | `Manager` | `custom:property_id` | Minimum that can read folios *and* post an approved adjustment. Explicitly **not** `Admin` — it has no reason to trigger audit runs |
 | A3 Arrivals Readiness | `Manager` | `custom:property_id` | `PUT /stays/{id}/assign-room` is Manager/Admin only |
-| A4 Portfolio Insight | `RegionalManager` (per region) and a chain-level `Manager` identity | `custom:region` / none | Read-only; regional scoping is enforced by the reporting handlers themselves |
+| A4 Portfolio Insight | `RegionalManager` (per region) and a chain-level `Manager` identity | `custom:region` / none | Read-only; regional scoping is enforced by the reporting handlers themselves. **As built:** one chain-level `RevenueManager` identity (`agent-regional`), read-only on the platform. A region-less `RegionalManager` was used first and broke when the platform began refusing it (2026-10); see `identity_stack.CHAIN_AGENTS` |
 | A5 Folio Accuracy | `FrontDesk` for the explain-only path; `Manager` for correction proposals | `custom:property_id` | Two identities so the high-frequency guest-explanation path holds no write authority at all |
 
 **Rules that hold for all of them:**

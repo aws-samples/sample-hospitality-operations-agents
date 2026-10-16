@@ -23,7 +23,7 @@ and ``REGIONAL_GROUPS`` (RegionalManager); everyone else is denied outright. Whe
 
 Therefore:
 
-* **Chain-level agents** (Manager / RegionalManager) must leave
+* **Chain-level agents** (Manager / RevenueManager) must leave
   ``custom:property_id`` UNSET, and pass ``propertyId`` explicitly per request.
 * The **Housekeeping agent** is in a group that is neither chain-level nor
   regional, so it *must* carry ``custom:property_id`` -- which pins it to exactly
@@ -216,7 +216,8 @@ def on_create_or_update(props: dict) -> dict:
             username=creds["username"],
             password=creds["password"],
             group=agent["Group"],
-            # RegionalManager may be region-scoped; unset means all regions.
+            # Region is unset for every chain agent today. A RegionalManager with no
+            # region is refused by the platform, so none of them is one.
             region=agent.get("Region") or None,
         )
     summary["chainAgents"] = len(chain_agents)

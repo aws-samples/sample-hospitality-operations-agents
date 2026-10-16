@@ -3,8 +3,10 @@
 
 """Gateway target ``regional`` -- A5, Regional Performance (Tier 3, advise-only).
 
-Signs in as ``agent-regional@…`` (Cognito group **RegionalManager**, with
-``custom:region`` unset so it sees every region).
+Signs in as ``agent-regional@…`` in the Cognito group **RevenueManager**:
+chain-level, so it sees every property, and read-only, so it reaches no write
+endpoint in the platform. It was a RegionalManager with no region until the
+platform began refusing that combination; see ``identity_stack.CHAIN_AGENTS``.
 
 **Read-only by construction, and permanently so.** The foundation exposes no
 write endpoint for rates, inventory, or availability -- ``PATTERN_EXTENSION_GUIDE.md`` §6

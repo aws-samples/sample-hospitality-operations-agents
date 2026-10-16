@@ -10,7 +10,8 @@ exists, in its own words, "to populate the property selector for chain-level use
 to resolve the property name for property-scoped users", and it scopes the answer itself:
 
 * ``Admin`` / ``Manager`` / ``RevenueManager`` -- every active property.
-* ``RegionalManager`` -- the properties in ``custom:region`` (all of them if unset).
+* ``RegionalManager`` -- the properties in ``custom:region``; **refused** if unset, since
+  the platform's 2026-10 fix (it used to mean all of them).
 * ``FrontDesk`` / ``Housekeeping`` -- exactly one, their own, *with its name*.
 * anything else -- an empty list.
 

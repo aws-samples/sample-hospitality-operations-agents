@@ -529,6 +529,22 @@ registration — either they changed it, or their registration is wrong.
 `scripts/register_staff_scope.py check <email>` shows both side by side. Fix whichever is
 wrong; never re-seed to make the error go away, because seeding copies the token's value.
 
+### The regional agent's calls all fail with `FORBIDDEN: Access denied: no region assigned`
+
+The platform refuses a `RegionalManager` whose `custom:region` is empty; it used to read
+that as "every region". This project's regional agent now signs in as a chain-level
+`RevenueManager` instead. If you deployed before that change, the provisioner adds the
+new group but cannot remove the old one (it is deliberately not granted
+`AdminRemoveUserFromGroup`), so remove it once after deploying:
+
+```bash
+aws cognito-idp admin-remove-user-from-group --user-pool-id <platform-user-pool-id> \
+  --username agent-regional@<agentEmailDomain> --group-name RegionalManager
+```
+
+The agent works with both groups, since the platform checks chain-level groups first,
+but its identity should match its configuration.
+
 ### `InvalidClientTokenId` during synth
 
 `--profile` did not reach the app subprocess. Use `export AWS_PROFILE=...`. See §2.
